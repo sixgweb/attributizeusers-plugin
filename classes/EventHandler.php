@@ -39,4 +39,9 @@ class EventHandler extends AbstractEventHandler
             'path' => 'rainlab/user/users',
         ];
     }
+
+    protected function getAllowCreateFileUpload(): bool
+    {
+        return true;
+    }
 }

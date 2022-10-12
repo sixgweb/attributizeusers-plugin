@@ -110,7 +110,10 @@ class Plugin extends PluginBase
                 $controller->implement[] = 'Backend.Behaviors.ImportExportController';
                 $controller->addDynamicProperty('importExportConfig', [
                     'export' => [
-                        'useList' => ['raw' => true],
+                        'useList' => [
+                            'raw' => true,
+                        ],
+                        'fileName' => 'export-users-' . date('Y-m-d'),
                     ]
                 ]);
             }
@@ -146,6 +149,23 @@ class Plugin extends PluginBase
                     $field = $widget->getField('name');
                     $field->comment = 'Note: Name attribute can be disabled in Settings->Attributize';
                 }
+            }
+        }, 10000);
+
+        Event::listen('backend.list.extendColumns', function ($widget) {
+            // Only for the User controller
+            if (!$widget->getController() instanceof \RainLab\User\Controllers\Users) {
+                return;
+            }
+
+            // Only for the User model
+            if (!$widget->model instanceof \RainLab\User\Models\User) {
+                return;
+            }
+
+            if (Settings::get('user.override_name')) {
+                $widget->removeColumn('name');
+                $widget->removeColumn('surname');
             }
         }, 10000);
     }
@@ -279,7 +299,7 @@ class Plugin extends PluginBase
                 'config[prefill]' => [
                     'label' => 'Default User Value',
                     'comment' => 'Prefill this field with a user profile field value',
-                    'tab' => 'sixgweb.attributize::lang.field.configuration',
+                    'tab' => 'sixgweb.attributize::lang.field.field',
                     'emptyOption' => '-- default value --',
                     'type' => 'dropdown',
                     'options' => $fields,
