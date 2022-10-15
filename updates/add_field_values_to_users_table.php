@@ -28,7 +28,7 @@ class AddFieldValuesToUsersTable extends Migration
     {
         Schema::table('users', function ($table) {
             $user = new User;
-            foreach ($user->getAllFieldableFields() as $field) {
+            foreach ($user->getFieldableFieldsWithoutGlobalScopes() as $field) {
                 $field->deleteVirtualColumn();
             }
             if (Schema::hasColumn($table->getTable(), 'field_values')) {
