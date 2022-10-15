@@ -26,17 +26,14 @@ class AddFieldValuesToUsersTable extends Migration
 
     public function down()
     {
-        if (Schema::hasTable('users') && Schema::hasColumns('users', ['field_values'])) {
-            Schema::table('users', function ($table) {
-                $user = new User;
-                foreach ($user->getAllFieldableFields() as $field) {
-                    $column = 'field_values_' . $field->code;
-                    if (Schema::hasColumn('users', $column)) {
-                        $table->dropColumn($column);
-                    }
-                }
+        Schema::table('users', function ($table) {
+            $user = new User;
+            foreach ($user->getAllFieldableFields() as $field) {
+                $field->deleteVirtualColumn();
+            }
+            if (Schema::hasColumn($table->getTable(), 'field_values')) {
                 $table->dropColumn(['field_values']);
-            });
-        }
+            }
+        });
     }
 }
