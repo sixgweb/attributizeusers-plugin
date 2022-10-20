@@ -2,6 +2,7 @@
     "name": "sixgweb/attributizeusers-plugin",
     "type": "october-plugin",
     "description": "RainLab User Attributize Integration",
+    "license": "MIT",
     "require": {
         "composer/installers": "~1.0"
     }
