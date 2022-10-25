@@ -4,6 +4,7 @@
     "description": "RainLab User Attributize Integration",
     "license": "MIT",
     "require": {
-        "composer/installers": "~1.0"
+        "composer/installers": "~1.0",
+        "rainlab/user-plugin": "~1.6"
     }
 }

@@ -1,3 +1,5 @@
 1.0.1: 
   - First version of AttributizeUser
   - add_field_values_to_users_table.php
+1.0.2:
+  - Update composer dependencies

@@ -179,7 +179,7 @@ class Plugin extends PluginBase
     {
         if (!App::runningInBackend()) {
             FieldsComponent::extend(function ($component) {
-                $component->bindEvent('fields.setFields', function (&$fieldValues) use ($component) {
+                $component->bindEvent('fields.getFields', function (&$fieldValues) use ($component) {
                     if (!$component->model->exists && $user = Auth::getUser()) {
                         $fields = $component->model
                             ->getFieldableFields()
