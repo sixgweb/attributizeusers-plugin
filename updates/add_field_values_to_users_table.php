@@ -26,6 +26,10 @@ class AddFieldValuesToUsersTable extends Migration
 
     public function down()
     {
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function ($table) {
             $user = new User;
             foreach ($user->getFieldableFieldsWithoutGlobalScopes() as $field) {

@@ -5,13 +5,13 @@ namespace Sixgweb\AttributizeUsers;
 use App;
 use Auth;
 use Event;
+use Schema;
 use Backend;
 use RainLab\User\Models\User;
 use System\Classes\PluginBase;
 use Sixgweb\Attributize\Models\Field;
 use Sixgweb\Attributize\Models\Settings;
 use Sixgweb\Attributize\Components\Fields as FieldsComponent;
-use Sixgweb\Attributize\Behaviors\FieldsController;
 use Sixgweb\AttributizeUsers\Classes\EventHandler;
 
 /**

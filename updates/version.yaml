@@ -3,3 +3,5 @@
   - add_field_values_to_users_table.php
 1.0.2:
   - Update composer dependencies
+1.0.3:
+  - Check users table exists
