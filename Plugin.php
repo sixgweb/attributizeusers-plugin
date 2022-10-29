@@ -187,9 +187,8 @@ class Plugin extends PluginBase
                             ->toArray();
 
                         foreach ($fields as $code => $prefill) {
-                            $key = $user->fieldable . '_' . $prefill;
-                            if ($prefill && isset($user->{$key})) {
-                                $fieldValues[$code] = $user->{$key};
+                            if ($prefill && isset($user->field_values[$prefill])) {
+                                $fieldValues[$code] = $user->field_values[$prefill];
                             }
                         }
                     }
