@@ -7,3 +7,6 @@
   - Check users table exists
 1.0.4:
   - Use field_values column for name override, instead of virtual columns
+1.0.5:
+  - Remove references to generated columns and use field_values[] for prefill values.
+  - Add email and name fields to predefined options.

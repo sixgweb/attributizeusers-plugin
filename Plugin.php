@@ -11,6 +11,7 @@ use RainLab\User\Models\User;
 use System\Classes\PluginBase;
 use Sixgweb\Attributize\Models\Field;
 use Sixgweb\Attributize\Models\Settings;
+use October\Rain\Html\Helper as HtmlHelper;
 use Sixgweb\Attributize\Components\Fields as FieldsComponent;
 use Sixgweb\AttributizeUsers\Classes\EventHandler;
 
@@ -75,7 +76,7 @@ class Plugin extends PluginBase
 
                                 $val = $model->{$field['code']};
                                 if (!$val) {
-                                    $code = str_replace('field_values_', '', $field['code']);
+                                    $code = str_replace(['field_values[', ']'], '', $field['code']);
                                     $val = $model->field_values[$code] ?? null;
                                 }
 
@@ -187,8 +188,10 @@ class Plugin extends PluginBase
                             ->toArray();
 
                         foreach ($fields as $code => $prefill) {
-                            if ($prefill && isset($user->field_values[$prefill])) {
-                                $fieldValues[$code] = $user->field_values[$prefill];
+                            if ($prefill) {
+                                if ($value = array_get($user, $prefill)) {
+                                    $fieldValues[$code] = $value;
+                                }
                             }
                         }
                     }
@@ -212,7 +215,7 @@ class Plugin extends PluginBase
                 $options = [];
                 $fields = $user->getFieldableFields()->pluck('name', 'code')->toArray();
                 foreach ($fields as $code => $name) {
-                    $options['field_values_' . $code] = $name;
+                    $options['field_values[' . $code . ']'] = $name;
                 }
                 return $options;
             });
@@ -293,6 +296,13 @@ class Plugin extends PluginBase
                 ->get()
                 ->pluck('name', 'code')
                 ->toArray();
+
+            foreach ($fields as $code => $name) {
+                $fields['field_values.' . $code] = $name;
+                unset($fields[$code]);
+            }
+            $fields = ['email' => 'Email (account)', 'name' => 'Name (account)'] + $fields;
+
 
             $widget->addTabFields([
                 'config[prefill]' => [
