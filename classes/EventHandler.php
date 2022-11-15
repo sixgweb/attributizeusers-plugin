@@ -36,7 +36,7 @@ class EventHandler extends AbstractEventHandler
         return [
             'owner' => 'RainLab.User',
             'code' => 'user',
-            'path' => 'rainlab/user/users',
+            'url' => \Backend::url('rainlab/user/users/fields'),
         ];
     }
 
