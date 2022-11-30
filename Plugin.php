@@ -56,6 +56,13 @@ class Plugin extends PluginBase
         $this->extendFieldsComponent();
     }
 
+    public function registerComponents()
+    {
+        return [
+            'Sixgweb\AttributizeUsers\Components\Fields' => 'userFields',
+        ];
+    }
+
     /**
      * Extends user model, replacing name attribute, if enabled
      * in settings
@@ -180,8 +187,8 @@ class Plugin extends PluginBase
     {
         if (!App::runningInBackend()) {
             FieldsComponent::extend(function ($component) {
-                $component->bindEvent('fields.getFields', function (&$fieldValues) use ($component) {
-                    if (!$component->model->exists && $user = Auth::getUser()) {
+                $component->bindEvent('fields.getFieldValues', function ($model, &$fieldValues) use ($component) {
+                    if (!$model->exists && $user = Auth::getUser()) {
                         $fields = $component->model
                             ->getFieldableFields()
                             ->pluck('config.prefill', 'code')
