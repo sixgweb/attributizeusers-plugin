@@ -56,7 +56,12 @@ class Plugin extends PluginBase
         $this->extendFieldsComponent();
     }
 
-    public function registerComponents()
+    /**
+     * register plugin components
+     *
+     * @return array
+     */
+    public function registerComponents(): array
     {
         return [
             'Sixgweb\AttributizeUsers\Components\Fields' => 'userFields',

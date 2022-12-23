@@ -12,3 +12,4 @@
   - Add email and name fields to predefined options.
 1.0.6: Update backend menu params array
 1.0.7: Add fields component for new integration method
+1.0.8: Fix user registration not saving field values
