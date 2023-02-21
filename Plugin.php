@@ -225,7 +225,7 @@ class Plugin extends PluginBase
             $model->addDynamicMethod('getCodeOptions', function () {
                 $user = new User;
                 $options = [];
-                $fields = $user->getFieldableFields()->pluck('name', 'code')->toArray();
+                $fields = $user->getAllFieldableFields()->pluck('name', 'code')->toArray();
                 foreach ($fields as $code => $name) {
                     $options['field_values[' . $code . ']'] = $name;
                 }
