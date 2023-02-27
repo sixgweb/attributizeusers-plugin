@@ -14,3 +14,4 @@
 1.0.7: Add fields component for new integration method
 1.0.8: Fix user registration not saving field values
 1.0.9: Get all fieldable fields for user override name dropdowns
+1.0.10: Bump composer version of user-plugin to 2.0
