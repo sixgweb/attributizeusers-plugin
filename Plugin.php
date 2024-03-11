@@ -195,7 +195,7 @@ class Plugin extends PluginBase
                 $component->bindEvent('fields.getFieldValues', function ($model, &$fieldValues) use ($component) {
                     if (!$model->exists && $user = Auth::getUser()) {
                         $fields = $component->model
-                            ->getFieldableFields()
+                            ->fieldableGetFields()
                             ->pluck('config.prefill', 'code')
                             ->toArray();
 
@@ -225,7 +225,10 @@ class Plugin extends PluginBase
             $model->addDynamicMethod('getCodeOptions', function () {
                 $user = new User;
                 $options = [];
-                $fields = $user->getAllFieldableFields()->pluck('name', 'code')->toArray();
+                $fields = $user->fieldableGetFields([
+                    'useScopes' => false,
+                    'useGlobalScopes' => false,
+                ])->pluck('name', 'code')->toArray();
                 foreach ($fields as $code => $name) {
                     $options['field_values[' . $code . ']'] = $name;
                 }

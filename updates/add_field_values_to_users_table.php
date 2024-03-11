@@ -32,7 +32,11 @@ class AddFieldValuesToUsersTable extends Migration
 
         Schema::table('users', function ($table) {
             $user = new User;
-            foreach ($user->getFieldableFieldsWithoutGlobalScopes() as $field) {
+            foreach ($user->fieldableGetFields([
+                'useScopes' => false,
+                'useGlobalScopes' => false,
+                'useCache' => false
+            ]) as $field) {
                 $field->deleteVirtualColumn();
             }
             if (Schema::hasColumn($table->getTable(), 'field_values')) {

@@ -34,7 +34,8 @@ class Fields extends FieldsBase
          * and modify the data to use our filled model values.
          **/
         Event::listen('rainlab.user.beforeRegister', function (&$data) {
-            $data[$this->model->fieldable] = $this->model->field_values;
+            $column = $this->model->fieldableGetColumn();
+            $data[$column] = $this->model->{$column};
         });
     }
 }
