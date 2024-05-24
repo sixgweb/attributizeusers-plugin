@@ -19,3 +19,5 @@
 1.0.12: 
   - Update composer user version to accomodate rainlab.user 3.0
   - Add Helper class to determine user plugin version
+1.0.13:
+  - Fix return type for User v2 installs

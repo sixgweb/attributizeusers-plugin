@@ -17,7 +17,7 @@ class EventHandler extends AbstractEventHandler
         return \RainLab\User\Models\User::class;
     }
 
-    protected function getComponentClass(): array
+    protected function getComponentClass(): string|array
     {
         if (Helper::getUserPluginVersion() < 3) {
             return \RainLab\User\Components\Account::class;
