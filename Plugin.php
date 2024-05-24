@@ -12,6 +12,7 @@ use System\Classes\PluginBase;
 use Sixgweb\Attributize\Models\Field;
 use Sixgweb\Attributize\Models\Settings;
 use October\Rain\Html\Helper as HtmlHelper;
+use Sixgweb\AttributizeUsers\Classes\Helper;
 use Sixgweb\Attributize\Components\Fields as FieldsComponent;
 use Sixgweb\AttributizeUsers\Classes\EventHandler;
 
@@ -118,6 +119,9 @@ class Plugin extends PluginBase
 
     protected function extendUsersController()
     {
+        $nameField = Helper::getUserPluginVersion() >= 3 ? 'first_name' : 'name';
+        $surnameField = Helper::getUserPluginVersion() >= 3 ? 'last_name' : 'surname';
+
         \RainLab\User\Controllers\Users::extend(function ($controller) {
             if (!isset($controller->importExportConfig)) {
                 $controller->implement[] = 'Backend.Behaviors.ImportExportController';
@@ -143,7 +147,7 @@ class Plugin extends PluginBase
             });
         }
 
-        Event::listen('backend.form.extendFields', function ($widget) {
+        Event::listen('backend.form.extendFields', function ($widget) use ($nameField, $surnameField) {
             // Only for the User controller
             if (!$widget->getController() instanceof \RainLab\User\Controllers\Users) {
                 return;
@@ -155,17 +159,17 @@ class Plugin extends PluginBase
             }
 
             if (Settings::get('user.override_name')) {
-                $widget->removeField('name');
-                $widget->removeField('surname');
+                $widget->removeField($nameField);
+                $widget->removeField($surnameField);
             } else {
-                if (isset($widget->fields['name'])) {
-                    $field = $widget->getField('name');
+                if (isset($widget->fields[$nameField]) && Helper::getUserPluginVersion() < 3) {
+                    $field = $widget->getField($nameField);
                     $field->comment = 'Note: Name attribute can be disabled in Settings->Attributize';
                 }
             }
         }, 10000);
 
-        Event::listen('backend.list.extendColumns', function ($widget) {
+        Event::listen('backend.list.extendColumns', function ($widget) use ($nameField, $surnameField) {
             // Only for the User controller
             if (!$widget->getController() instanceof \RainLab\User\Controllers\Users) {
                 return;
@@ -177,8 +181,8 @@ class Plugin extends PluginBase
             }
 
             if (Settings::get('user.override_name')) {
-                $widget->removeColumn('name');
-                $widget->removeColumn('surname');
+                $widget->removeColumn($nameField);
+                $widget->removeColumn($surnameField);
             }
         }, 10000);
     }
@@ -316,7 +320,7 @@ class Plugin extends PluginBase
                 $fields['field_values.' . $code] = $name;
                 unset($fields[$code]);
             }
-            $fields = ['email' => 'Email (account)', 'name' => 'Name (account)'] + $fields;
+            $fields = ['email' => 'Email (account)', 'fullname' => 'Full Name (account)'] + $fields;
 
 
             $widget->addTabFields([

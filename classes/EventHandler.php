@@ -3,6 +3,7 @@
 namespace Sixgweb\AttributizeUsers\Classes;
 
 use October\Rain\Database\Model;
+use Sixgweb\AttributizeUsers\Classes\Helper;
 use Sixgweb\Attributize\Classes\AbstractEventHandler;
 
 class EventHandler extends AbstractEventHandler
@@ -16,9 +17,16 @@ class EventHandler extends AbstractEventHandler
         return \RainLab\User\Models\User::class;
     }
 
-    protected function getComponentClass(): string
+    protected function getComponentClass(): array
     {
-        return \RainLab\User\Components\Account::class;
+        if (Helper::getUserPluginVersion() < 3) {
+            return \RainLab\User\Components\Account::class;
+        }
+
+        return [
+            \RainLab\User\Components\Account::class,
+            \RainLab\User\Components\Registration::class,
+        ];
     }
 
     protected function getControllerClass(): string
@@ -28,7 +36,10 @@ class EventHandler extends AbstractEventHandler
 
     protected function getComponentModel($component): Model
     {
-        return $component->user() ?? new ($this->getModelClass())();
+        if ($component instanceof \RainLab\User\Components\Account) {
+            return $component->user() ?? new ($this->getModelClass())();
+        }
+        return new ($this->getModelClass())();
     }
 
     protected function getBackendMenuParameters(): array

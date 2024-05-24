@@ -16,3 +16,6 @@
 1.0.9: Get all fieldable fields for user override name dropdowns
 1.0.10: Bump composer version of user-plugin to 2.0
 1.0.11: Update deprecated method
+1.0.12: 
+  - Update composer user version to accomodate rainlab.user 3.0
+  - Add Helper class to determine user plugin version

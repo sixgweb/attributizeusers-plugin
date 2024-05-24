@@ -4,6 +4,7 @@ namespace Sixgweb\AttributizeUsers\Components;
 
 use Event;
 use Sixgweb\Attributize\Components\Fields as FieldsBase;
+use Sixgweb\AttributizeUsers\Classes\Helper;
 
 /**
  * Fields Component
@@ -33,9 +34,16 @@ class Fields extends FieldsBase
          * As a workaround, we add an event lister to the Account component,
          * and modify the data to use our filled model values.
          **/
-        Event::listen('rainlab.user.beforeRegister', function (&$data) {
-            $column = $this->model->fieldableGetColumn();
-            $data[$column] = $this->model->{$column};
-        });
+        if (Helper::getUserPluginVersion() >= 3) {
+            Event::listen('rainlab.user.beforeRegister', function ($component, &$data) {
+                $column = $this->model->fieldableGetColumn();
+                $data[$column] = $this->model->{$column};
+            });
+        } else {
+            Event::listen('rainlab.user.beforeRegister', function (&$data) {
+                $column = $this->model->fieldableGetColumn();
+                $data[$column] = $this->model->{$column};
+            });
+        }
     }
 }
