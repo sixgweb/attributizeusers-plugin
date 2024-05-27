@@ -21,3 +21,7 @@
   - Add Helper class to determine user plugin version
 1.0.13:
   - Fix return type for User v2 installs
+1.0.14:
+  - Fix .row layout for user fields in OCMS <= 3.5
+  - Fix Export Results for User plugin >= 3.0, which now has export functionality
+  - Fix user name override for User plugin >= 3.0

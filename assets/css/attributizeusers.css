@@ -1,0 +1,4 @@
+/* Fix for OCMS < 3.6 not adding w-100 to row container */
+.row:not(.w-100) {
+    width: 100%;
+}

@@ -109,9 +109,10 @@ class Plugin extends PluginBase
                     }
                 });
 
-                $model->bindEvent('model.beforeSave', function () use ($model) {
+                $model->bindEvent('model.beforeValidate', function () use ($model) {
                     //Use the above accessor to update the name column
-                    $model->name = $model->name;
+                    $attribute =  Helper::getUserPluginVersion() >= 3 ? 'first_name' : 'name';
+                    $model->{$attribute} = $model->name;
                 });
             }
         });
@@ -123,6 +124,9 @@ class Plugin extends PluginBase
         $surnameField = Helper::getUserPluginVersion() >= 3 ? 'last_name' : 'surname';
 
         \RainLab\User\Controllers\Users::extend(function ($controller) {
+
+            $controller->addCss('/plugins/sixgweb/attributizeusers/assets/css/attributizeusers.css');
+
             if (!isset($controller->importExportConfig)) {
                 $controller->implement[] = 'Backend.Behaviors.ImportExportController';
                 $controller->addDynamicProperty('importExportConfig', [
@@ -137,11 +141,24 @@ class Plugin extends PluginBase
         });
 
         if (Settings::get('user.add_export_features')) {
+
+            //Users v3 now has import/export so update the config file if exportUrl was used
+            Event::listen('system.extendConfigFile', function ($file, $config) {
+                if ($file == '/plugins/rainlab/user/controllers/users/config_import_export.yaml') {
+                    if (get('useList')) {
+                        $config['export']['useList'] = [
+                            'raw' => true,
+                        ];
+                        return $config;
+                    }
+                }
+            });
+
             Event::listen('rainlab.user.view.extendListToolbar', function ($controller) {
                 return $controller->makePartial(
                     '~/plugins/sixgweb/attributizeusers/partials/_export_button.htm',
                     [
-                        'exportUrl' => Backend::url('rainlab/user/users/export'),
+                        'exportUrl' => Backend::url('rainlab/user/users/export?useList=1'),
                     ]
                 );
             });
