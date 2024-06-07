@@ -11,7 +11,6 @@ use RainLab\User\Models\User;
 use System\Classes\PluginBase;
 use Sixgweb\Attributize\Models\Field;
 use Sixgweb\Attributize\Models\Settings;
-use October\Rain\Html\Helper as HtmlHelper;
 use Sixgweb\AttributizeUsers\Classes\Helper;
 use Sixgweb\Attributize\Components\Fields as FieldsComponent;
 use Sixgweb\AttributizeUsers\Classes\EventHandler;
@@ -53,6 +52,7 @@ class Plugin extends PluginBase
         $this->extendUserModel();
         $this->extendAttributizeSettings();
         $this->extendUsersController();
+        $this->extendRegistrationComponent();
         $this->extendAttributizeWidget();
         $this->extendFieldsComponent();
     }
@@ -77,44 +77,68 @@ class Plugin extends PluginBase
      */
     protected function extendUserModel()
     {
-        \RainLab\User\Models\User::extend(function ($model) {
-            if (Settings::get('user.override_name')) {
-                $model->addDynamicMethod('getNameAttribute', function ($value) use ($model) {
-                    if ($format = Settings::get('user.fullname')) {
-                        $name = '';
-                        foreach ($format as $field) {
-                            if ($field['code'] == 'name') {
-                                $name .= $value;
-                            } else {
+        if (!Settings::get('user.override_name', false)) {
+            return;
+        }
 
-                                $val = $model->{$field['code']};
-                                if (!$val) {
-                                    $code = str_replace(['field_values[', ']'], '', $field['code']);
-                                    $val = $model->field_values[$code] ?? null;
-                                }
+        User::extend(function ($model) {
 
-                                if ($val && $val != 'null') {
-                                    if ($field['comma']) {
-                                        $name = trim($name);
-                                        $name .= ', ' . $val;
-                                    } else {
-                                        $name .= $val . ' ';
-                                    }
+            $model->addDynamicMethod('getFirstNameAttribute', function ($value) use ($model) {
+                return $model->name;
+            });
+
+            $model->addDynamicMethod('getLastNameAttribute', function ($value) use ($model) {
+                return '';
+            });
+
+            $model->addDynamicMethod('getNameAttribute', function ($value) use ($model) {
+                if ($format = Settings::get('user.fullname')) {
+                    $name = '';
+                    foreach ($format as $field) {
+                        if ($field['code'] == 'name') {
+                            $name .= $value;
+                        } else {
+
+                            $val = $model->{$field['code']};
+                            if (!$val) {
+                                $code = str_replace(['field_values[', ']'], '', $field['code']);
+                                $val = $model->field_values[$code] ?? null;
+                            }
+
+                            if ($val && $val != 'null') {
+                                if ($field['comma']) {
+                                    $name = trim($name);
+                                    $name .= ', ' . $val;
+                                } else {
+                                    $name .= $val . ' ';
                                 }
                             }
                         }
-                        return trim($name);
-                    } else {
-                        return $value;
                     }
-                });
+                    return trim($name);
+                } else {
+                    return $value;
+                }
+            });
 
-                $model->bindEvent('model.beforeValidate', function () use ($model) {
-                    //Use the above accessor to update the name column
-                    $attribute =  Helper::getUserPluginVersion() >= 3 ? 'first_name' : 'name';
-                    $model->{$attribute} = $model->name;
-                });
-            }
+            $model->bindEvent('model.beforeValidate', function () use ($model) {
+
+                if (Helper::getUserPluginVersion() >= 3) {
+                    //User model in v3 has a first_name required rule.  Remove it, if we're overriding.
+                    $model->removeValidationRule('first_name', 'required');
+
+                    //Remove hardcoded last_name value in extendRegistrationComponent() 
+                    $model->bindEvent('model.beforeCreate', function () use ($model) {
+                        $model->last_name = '';
+                    });
+
+                    //use the above accessor to update the first_name column
+                    $model->first_name = $model->name;
+                } else {
+                    //use the above accessor to update the name column
+                    $model->name = $model->name;
+                }
+            });
         });
     }
 
@@ -242,22 +266,8 @@ class Plugin extends PluginBase
      */
     protected function extendAttributizeSettings()
     {
-        Settings::extend(function ($model) {
-            $model->addDynamicMethod('getCodeOptions', function () {
-                $user = new User;
-                $options = [];
-                $fields = $user->fieldableGetFields([
-                    'useScopes' => false,
-                    'useGlobalScopes' => false,
-                ])->pluck('name', 'code')->toArray();
-                foreach ($fields as $code => $name) {
-                    $options['field_values[' . $code . ']'] = $name;
-                }
-                return $options;
-            });
-        });
-
         Event::listen('backend.form.extendFields', function ($form) {
+
             if (!$form->model instanceof Settings) {
                 return;
             }
@@ -265,6 +275,17 @@ class Plugin extends PluginBase
             //Don't extend repeaters
             if ($form->isNested) {
                 return;
+            }
+
+            //Get the user fields for the override options
+            $user = new User;
+            $options = [];
+            $fields = $user->fieldableGetFields([
+                'useScopes' => false,
+                'useGlobalScopes' => false,
+            ])->pluck('name', 'code')->toArray();
+            foreach ($fields as $code => $name) {
+                $options['field_values[' . $code . ']'] = $name;
             }
 
             $form->addTabFields([
@@ -294,6 +315,7 @@ class Plugin extends PluginBase
                                 'label' => 'Select Field',
                                 'type' => 'dropdown',
                                 'span' => 'left',
+                                'options' => $options,
                             ],
                             'comma' => [
                                 'label' => 'Place Comma Before Value',
@@ -353,6 +375,26 @@ class Plugin extends PluginBase
                     ]
                 ]
             ]);
+        });
+    }
+
+    /**
+     * Gross hack.  RainLab.User v3 requires first_name and last_name in the registration component onRegister validation check.  If we're overriding the name attribute, set first/last to the email to pass validation.
+     * 
+     * Our beforeValidate event listener above will then set the correct values before the model is saved.
+     * @return void
+     */
+    protected function extendRegistrationComponent()
+    {
+        if (Helper::getUserPluginVersion() < 3) {
+            return;
+        }
+
+        Event::listen('rainlab.user.beforeRegister', function ($component, &$input) {
+            if (Settings::get('user.override_name')) {
+                $input['first_name'] = $input['email'];
+                $input['last_name'] = $input['email'];
+            }
         });
     }
 }

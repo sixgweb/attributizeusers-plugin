@@ -35,9 +35,20 @@ class Fields extends FieldsBase
          * and modify the data to use our filled model values.
          **/
         if (Helper::getUserPluginVersion() >= 3) {
+
+            /**
+             * User v3 uses User::create() instead of new User()->fill()->save().
+             * We need to bind to the model.beforeCreate event to fill the model with our data.
+             */
             Event::listen('rainlab.user.beforeRegister', function ($component, &$data) {
                 $column = $this->model->fieldableGetColumn();
                 $data[$column] = $this->model->{$column};
+                $modelClass = get_class($this->model);
+                $modelClass::extend(function ($model) use ($data) {
+                    $model->bindEvent('model.beforeCreate', function () use ($model, $data) {
+                        $model->fill($data);
+                    });
+                });
             });
         } else {
             Event::listen('rainlab.user.beforeRegister', function (&$data) {
