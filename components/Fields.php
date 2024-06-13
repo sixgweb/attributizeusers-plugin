@@ -48,6 +48,9 @@ class Fields extends FieldsBase
                     $model->bindEvent('model.beforeCreate', function () use ($model, $data) {
                         $model->fill($data);
                     });
+                    $model->bindEvent('model.beforeValidate', function () use ($model, $data) {
+                        $model->fill($data);
+                    });
                 });
             });
         } else {

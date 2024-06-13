@@ -28,3 +28,5 @@
 1.0.15:
   - Workaround for User plugin 3.0 registration component onRegister validation
   - Additional fixes for name override in User plugin 3.0
+1.0.16:
+  - Add event listener for user registration validation
