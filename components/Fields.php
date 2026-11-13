@@ -45,11 +45,9 @@ class Fields extends FieldsBase
                 $data[$column] = $this->model->{$column};
                 $modelClass = get_class($this->model);
                 $modelClass::extend(function ($model) use ($data) {
-                    $model->bindEvent('model.beforeCreate', function () use ($model, $data) {
-                        $model->fill($data);
-                    });
                     $model->bindEvent('model.beforeValidate', function () use ($model, $data) {
                         $model->fill($data);
+                        $model->validateFieldable();
                     });
                 });
             });

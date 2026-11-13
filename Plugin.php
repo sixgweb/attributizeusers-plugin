@@ -70,76 +70,20 @@ class Plugin extends PluginBase
     }
 
     /**
-     * Extends user model, replacing name attribute, if enabled
+     * Extends user model, replacing name and avatar attributes, if enabled
      * in settings
      *
      * @return void
      */
     protected function extendUserModel()
     {
-        if (!Settings::get('user.override_name', false)) {
-            return;
+        if (Settings::get('user.override_name', false)) {
+            $this->overrideUserNameAttribute();
         }
 
-        User::extend(function ($model) {
-
-            $model->addDynamicMethod('getFirstNameAttribute', function ($value) use ($model) {
-                return $model->name;
-            });
-
-            $model->addDynamicMethod('getLastNameAttribute', function ($value) use ($model) {
-                return '';
-            });
-
-            $model->addDynamicMethod('getNameAttribute', function ($value) use ($model) {
-                if ($format = Settings::get('user.fullname')) {
-                    $name = '';
-                    foreach ($format as $field) {
-                        if ($field['code'] == 'name') {
-                            $name .= $value;
-                        } else {
-
-                            $val = $model->{$field['code']};
-                            if (!$val) {
-                                $code = str_replace(['field_values[', ']'], '', $field['code']);
-                                $val = $model->field_values[$code] ?? null;
-                            }
-
-                            if ($val && $val != 'null') {
-                                if ($field['comma']) {
-                                    $name = trim($name);
-                                    $name .= ', ' . $val;
-                                } else {
-                                    $name .= $val . ' ';
-                                }
-                            }
-                        }
-                    }
-                    return trim($name);
-                } else {
-                    return $value;
-                }
-            });
-
-            $model->bindEvent('model.beforeValidate', function () use ($model) {
-
-                if (Helper::getUserPluginVersion() >= 3) {
-                    //User model in v3 has a first_name required rule.  Remove it, if we're overriding.
-                    $model->removeValidationRule('first_name', 'required');
-
-                    //Remove hardcoded last_name value in extendRegistrationComponent() 
-                    $model->bindEvent('model.beforeCreate', function () use ($model) {
-                        $model->last_name = '';
-                    });
-
-                    //use the above accessor to update the first_name column
-                    $model->first_name = $model->name;
-                } else {
-                    //use the above accessor to update the name column
-                    $model->name = $model->name;
-                }
-            });
-        });
+        if (Settings::get('user.override_avatar', false)) {
+            $this->overrideUserAvatarAttribute();
+        }
     }
 
     protected function extendUsersController()
@@ -295,6 +239,22 @@ class Plugin extends PluginBase
                     'comment' => 'If checked, new button added to Users list for exporting users',
                     'tab' => 'Users'
                 ],
+                'user[override_avatar]' => [
+                    'label' => 'Override Avatar Attribute',
+                    'type' => 'checkbox',
+                    'tab' => 'Users'
+                ],
+                'user[avatar_field]' => [
+                    'label' => 'Avatar Attribute Field',
+                    'type' => 'dropdown',
+                    'options' => $options,
+                    'trigger' => [
+                        'field' => 'user[override_avatar]',
+                        'action' => 'show',
+                        'condition' => 'checked',
+                    ],
+                    'tab' => 'Users'
+                ],
                 'user[override_name]' => [
                     'label' => 'Override Name Attribute',
                     'type' => 'checkbox',
@@ -348,7 +308,7 @@ class Plugin extends PluginBase
                 return;
             }
 
-            $fields = Field::where('fieldable_type', 'RainLab\User\Models\User')
+            $fields = Field::whereFieldable(User::class)
                 ->frontend()
                 ->enabled()
                 ->get()
@@ -394,6 +354,99 @@ class Plugin extends PluginBase
             if (Settings::get('user.override_name')) {
                 $input['first_name'] = $input['email'];
                 $input['last_name'] = $input['email'];
+            }
+        });
+    }
+
+    private function overrideUserNameAttribute()
+    {
+        User::extend(function ($model) {
+
+            $model->addDynamicMethod('getFirstNameAttribute', function ($value) use ($model) {
+                return $model->name;
+            });
+
+            $model->addDynamicMethod('getLastNameAttribute', function ($value) use ($model) {
+                return '';
+            });
+
+            $model->addDynamicMethod('getNameAttribute', function ($value) use ($model) {
+                if ($format = Settings::get('user.fullname')) {
+                    $name = '';
+                    foreach ($format as $field) {
+                        if ($field['code'] == 'name') {
+                            $name .= $value;
+                        } else {
+
+                            $val = $model->{$field['code']};
+                            if (!$val) {
+                                $code = str_replace(['field_values[', ']'], '', $field['code']);
+                                $val = $model->field_values[$code] ?? null;
+                            }
+
+                            if ($val && $val != 'null') {
+                                if ($field['comma']) {
+                                    $name = trim($name);
+                                    $name .= ', ' . $val;
+                                } else {
+                                    $name .= $val . ' ';
+                                }
+                            }
+                        }
+                    }
+                    return trim($name);
+                } else {
+                    return $value;
+                }
+            });
+
+            $model->bindEvent('model.beforeValidate', function () use ($model) {
+
+                if (Helper::getUserPluginVersion() >= 3) {
+                    //User model in v3 has a first_name required rule.  Remove it, if we're overriding.
+                    $model->removeValidationRule('first_name', 'required');
+
+                    //Remove hardcoded last_name value in extendRegistrationComponent() 
+                    $model->bindEvent('model.beforeCreate', function () use ($model) {
+                        $model->last_name = '';
+                    });
+
+                    //use the above accessor to update the first_name column
+                    $model->first_name = $model->name;
+                } else {
+                    //use the above accessor to update the name column
+                    $model->name = $model->name;
+                }
+            });
+        });
+    }
+
+    private function overrideUserAvatarAttribute()
+    {
+        User::extend(function ($model): void {
+            $model->addDynamicMethod('getAvatarAttribute', function ($value) use ($model) {
+                if ($field = Settings::get('user.avatar_field')) {
+                    $code = str_replace(['field_values[', ']'], '', $field);
+                    if ($model->field_values[$code] ?? null) {
+                        return $model->field_values[$code];
+                    }
+
+                    if ($model->{'field_values_' . $code} ?? null) {
+                        return $model->{'field_values_' . $code};
+                    }
+
+                    return null;
+                }
+            });
+        });
+
+        Event::listen('backend.form.extendFields', function ($widget) {
+            if (!$widget->model instanceof User) {
+                return;
+            }
+
+            if ($field = Settings::get('user.avatar_field')) {
+                $widget->removeField('avatar');
             }
         });
     }
